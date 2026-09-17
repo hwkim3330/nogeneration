@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>No Generation — decisions without generating text</title>
-<meta name="description" content="Two systems that decide without generating: a 1.5B-class language model read at its logits, and a real fruit-fly connectome. One forward pass, no tokens, format that cannot break.">
+<title>No Generation — deciding without producing a token</title>
+<meta name="description" content="A language model read at its logits and a real fruit-fly connectome, both running in your browser. One forward pass, no tokens, a format that cannot break.">
+<meta name="theme-color" content="#000000">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>⚖️</text></svg>">
 <link rel="stylesheet" href="app.css">
 </head>
@@ -12,105 +13,115 @@
 
 <header>
   <h1>No Generation</h1>
-  <span class="sub">Deciding without producing a single token.</span>
+  <span class="sub">decisions without tokens</span>
   <div class="sp"></div>
-  <span class="meta" id="hw">checking hardware…</span>
+  <span class="meta" id="hw">checking hardware</span>
 </header>
 
-<div class="page">
+<div class="hero">
+  <h2>The answer is already there.<br><em>Stop writing it out.</em></h2>
+  <p class="lead">A language model answering a multiple-choice question spends hundreds of
+  forward passes spelling out a word it had decided in the first one. Read the logits of that
+  first pass instead and the output <b>cannot be malformed</b>, the confidence comes free, and
+  nothing is composed that could come out wrong.</p>
+  <p class="lead"><b>A fruit fly's nervous system already works this way.</b> Light hits an eye,
+  current crosses real wiring, descending neurons fire harder on one side. One volley. Both run
+  below, in this page, on your machine.</p>
+  <div class="scroll">Scroll</div>
+</div>
 
-  <section class="lede">
-    <p>A language model answering a multiple-choice question normally <b>writes</b> the answer —
-    one token at a time, each pass depending on the last. Hundreds of forward passes to emit a
-    word that was already decided at the first one.</p>
-    <p>It does not have to. The choice is visible in the logits of a <b>single</b> forward pass.
-    Read it there and three things change: it gets faster, the output <i>cannot</i> be malformed,
-    and you can see how close the call was.</p>
-    <p><b>A fruit fly's nervous system already works this way.</b> Light hits the eye, current
-    spreads through real wiring, descending neurons fire more on one side than the other. One
-    pass. No tokens. And you can watch the whole thing happen.</p>
-  </section>
+<div class="spec">
+  <div><div class="n">1</div><div class="l">forward pass per decision, either system</div></div>
+  <div><div class="n">138,639</div><div class="l">neurons simulated in the page</div></div>
+  <div><div class="n">0</div><div class="l">bytes leaving your machine</div></div>
+  <div><div class="n">0.03<small>%</small></div><div class="l">of the brain that has to be cut to kill the decision</div></div>
+</div>
 
-  <div class="grid">
-    <!-- LLM -->
-    <div class="panel">
-      <div class="hd"><h2>Language model</h2><span class="tag" id="llmTag">Qwen2.5-0.5B · in your browser</span></div>
-      <div class="bd">
-        <div class="muted">Runs on your machine. Nothing is sent anywhere.</div>
-        <button class="cta" id="load">Load the model (~400 MB)</button>
-        <div id="loadNote" class="muted"></div>
+<section>
+  <div class="eyebrow">Try both</div>
+  <h3>Two systems that never write anything.</h3>
+  <div class="body">
+    <p>On the left, a 0.5B language model. Ask it to choose, then read the logits rather than
+    generate — or press the other button and watch it spell the same answer out.</p>
+    <p>On the right, the FlyWire connectome: every neuron of a fruit fly brain and every
+    connection between them, stepped as a spiking network right here. Shine a light on one side
+    and watch which way it leans. Then cut the forty neurons that carry the difference.</p>
+  </div>
 
-        <div id="llmUI" hidden>
-          <label class="k">Context</label>
-          <textarea id="ctx" rows="3">A cat sits on a warm windowsill, purring.</textarea>
-          <label class="k">Options (one per line)</label>
-          <textarea id="opts" rows="4">dog
+  <div class="duo">
+    <div class="cell">
+      <div class="top"><h4>Language model</h4><span class="tag" id="llmTag">Qwen2.5-0.5B · WebGPU</span></div>
+      <div class="sub">Weights are fetched once and cached. Nothing is sent anywhere.</div>
+      <button class="cta" id="load">Load the model · about 400 MB</button>
+      <div class="readout" id="loadNote"></div>
+
+      <div id="llmUI" hidden>
+        <label class="k">Context</label>
+        <textarea id="ctx" rows="2">A cat sits on a warm windowsill, purring.</textarea>
+        <label class="k">Options</label>
+        <textarea id="opts" rows="4">dog
 cat
 bird
 fish</textarea>
-          <div class="row">
-            <button class="plain" id="grab">Read the logits (1 pass)</button>
-            <button class="plain" id="gen">Generate it instead</button>
-          </div>
-          <div id="bars" class="bars"></div>
-          <div id="llmOut" class="out"></div>
+        <div class="row">
+          <button class="plain" id="grab">Read the logits</button>
+          <button class="plain" id="gen">Generate instead</button>
         </div>
+        <div id="bars" class="bars"></div>
+        <div id="llmOut" class="readout"></div>
       </div>
     </div>
 
-    <!-- Fly -->
-    <div class="panel">
-      <div class="hd"><h2>Fruit fly</h2><span class="tag">FlyWire v783 · 138,639 neurons</span></div>
-      <div class="bd">
-        <div class="muted">A real connectome, simulated as a spiking network here in the page.
-          Zero language-model inference.</div>
-        <button class="cta" id="hire">Wake one up</button>
-        <div id="flyNote" class="muted"></div>
+    <div class="cell">
+      <div class="top"><h4>Fruit fly</h4><span class="tag">FlyWire v783 · 2.7M connections</span></div>
+      <div class="sub">A real connectome, stepped as a spiking network. Zero language-model inference.</div>
+      <button class="cta" id="hire">Wake one up · 11 MB</button>
+      <div class="readout" id="flyNote"></div>
 
-        <div id="flyUI" hidden>
-          <div class="stage"><canvas id="eye" width="16" height="12"></canvas></div>
-          <div class="row">
-            <button class="plain" id="lightL">Light on the left</button>
-            <button class="plain" id="lightR">Light on the right</button>
-          </div>
-          <div class="gauge"><span class="k">Decision</span><span class="t"><i id="mS"></i></span><span class="v mono" id="vS">·0</span></div>
-          <div class="gauge"><span class="k">Descending</span><span class="t"><i id="mD" style="left:0"></i></span><span class="v mono" id="vD">0Hz</span></div>
-          <div class="out" id="flyOut"></div>
-          <div class="row">
-            <button class="plain" id="cut">Cut the channel</button>
-            <button class="plain" id="heal">Restore</button>
-          </div>
-          <div class="muted" id="cutNote">Cutting 40 neurons out of 138,639 — 0.03% — takes the
-            decision to zero. Nothing downstream is scripted, so there is nothing to fall back on.</div>
+      <div id="flyUI" hidden>
+        <div class="eye"><canvas id="eye" width="16" height="12"></canvas></div>
+        <div class="row">
+          <button class="plain" id="lightL">Light on the left</button>
+          <button class="plain" id="lightR">Light on the right</button>
         </div>
+        <div class="gauge"><span class="g">Decision</span><span class="t"><i id="mS"></i></span><span class="v" id="vS">·0</span></div>
+        <div class="gauge"><span class="g">Descending</span><span class="t"><i id="mD" style="left:0"></i></span><span class="v" id="vD">0Hz</span></div>
+        <div class="readout" id="flyOut"></div>
+        <div class="row">
+          <button class="plain" id="cut">Cut the channel</button>
+          <button class="plain" id="heal">Restore</button>
+        </div>
+        <div class="readout" id="cutNote">Forty neurons out of 138,639 carry the left–right
+          difference. Cut them and the decision goes to zero — there is no scripted fallback
+          underneath to keep it moving.</div>
       </div>
     </div>
   </div>
+</section>
 
-  <div class="panel wide">
-    <div class="hd"><h2>What one forward pass buys</h2></div>
-    <div class="bd">
-      <table class="cmp">
-        <tr><th></th><th>Generating</th><th>Reading the logits</th><th>The fly</th></tr>
-        <tr><td>Forward passes per decision</td><td class="mono">up to 288</td><td class="mono ok">1</td><td class="mono ok">1 volley</td></tr>
-        <tr><td>Can the output be malformed?</td><td>yes</td><td class="ok">structurally impossible</td><td class="ok">structurally impossible</td></tr>
-        <tr><td>Confidence available?</td><td>not directly</td><td class="ok">yes, calibrated</td><td class="ok">yes, firing rates</td></tr>
-        <tr><td>Can you see <i>why</i>?</td><td>no</td><td>partly — the logits</td><td class="ok">the whole path, and you can cut it</td></tr>
-      </table>
-      <div class="note" id="measured"></div>
-    </div>
-  </div>
+<section>
+  <div class="eyebrow">Why it matters</div>
+  <h3>One pass changes what the output can be.</h3>
+  <table class="cmp">
+    <tr><th></th><th>Generating</th><th>Reading the logits</th><th>The fly</th></tr>
+    <tr><td>Forward passes</td><td class="no mono">up to 288</td><td class="ok mono">1</td><td class="ok mono">1 volley</td></tr>
+    <tr><td>Malformed output</td><td class="no">possible</td><td class="ok">structurally impossible</td><td class="ok">structurally impossible</td></tr>
+    <tr><td>Confidence</td><td class="no">not directly available</td><td class="ok">calibrated, free</td><td class="ok">firing rates</td></tr>
+    <tr><td>Can you see why?</td><td class="no">no</td><td>partly — the logits</td><td class="ok">the whole path, and you can cut it</td></tr>
+  </table>
+  <div class="fine" id="measured"></div>
+</section>
 
-  <div class="panel wide">
-    <div class="hd"><h2>Honest limits</h2></div>
-    <div class="bd"><div class="note" id="limits"></div></div>
-  </div>
-
-</div>
+<section>
+  <div class="eyebrow">Limits</div>
+  <h3>What this does not do.</h3>
+  <div class="fine" id="limits"></div>
+</section>
 
 <footer>
-  Connectome <b>FlyWire v783</b> (CC-BY 4.0) · model <span class="mono">onnx-community/Qwen2.5-0.5B-Instruct</span><br>
-  <a href="https://github.com/hwkim3330/nogeneration">GitHub</a>
+  Connectome <b>FlyWire v783</b> (CC-BY 4.0) · model <span class="mono">onnx-community/Qwen2.5-0.5B-Instruct</span> ·
+  LIF parameters Shiu et al.<br>
+  <a href="https://github.com/hwkim3330/nogeneration">Source</a> · MIT
 </footer>
 
 <script type="module" src="app.js"></script>

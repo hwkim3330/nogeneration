@@ -75,8 +75,7 @@ function drawBars(opts, probs) {
   const best = probs.indexOf(Math.max(...probs));
   $("#bars").innerHTML = opts.map((o, i) => `
     <div class="bar ${i === best ? "win" : ""}">
-      <span class="nm">${LETTERS[i]}. ${esc(o)}</span>
-      <span class="tr"><i style="width:${(probs[i] * 100).toFixed(1)}%"></i></span>
+      <span class="nm">${esc(o)}<i style="width:${(probs[i] * 100).toFixed(1)}%"></i></span>
       <span class="pc">${(probs[i] * 100).toFixed(1)}%</span>
     </div>`).join("");
   return best;
@@ -94,7 +93,8 @@ $("#grab").onclick = async () => {
   const raw = opts.map((_, i) => Math.max(...letterIds[LETTERS[i]].map((t) => lg.data[last + t])));
   const best = drawBars(opts, softmax(raw));
   $("#llmOut").innerHTML =
-    `<b>1</b> forward pass · <b>${dt.toFixed(0)}ms</b> · chose <span class="win">${esc(opts[best])}</span>.
+    `<span class="big">${dt.toFixed(0)}<span style="font-size:.45em;color:var(--fg3)">ms</span></span>
+     <b>1</b> forward pass · chose <span class="win">${esc(opts[best])}</span>.
      The answer was already in that pass; generating it would only have spelled it out.`;
   b.disabled = false;
 };
@@ -114,8 +114,9 @@ $("#gen").onclick = async () => {
   // 선택지 하나를 고르는 문제는 생성해도 몇 패스면 끝난다. 대비가 커지는 것은
   // 필드가 여럿인 구조화된 출력에서다. 그걸 숨기지 않고 화면에 적는다.
   $("#llmOut").innerHTML =
-    `<b>${passes}</b> forward passes · <b class="slow">${dt.toFixed(0)}ms</b> · it wrote
-     “${esc(said)}”. Notice it did not answer with a bare letter — nothing made it.
+    `<span class="big slow">${dt.toFixed(0)}<span style="font-size:.45em;color:var(--fg3)">ms</span></span>
+     <b>${passes}</b> forward passes · it wrote “${esc(said)}”.
+     Notice it did not answer with a bare letter — nothing made it.
      <br><br>For a single choice the gap is small; the answer is short either way. It widens
      with structured output: a four-field JSON schema measured off this page took
      <b>288 passes and 1,617ms</b> generated, against <b>1 pass and 355ms</b> read from
@@ -153,11 +154,13 @@ $("#hire").onclick = async () => {
   }
 };
 
-function drawEye() {
+function drawEye(spark = 0) {
   const img = eyeCtx.createImageData(GW, GH);
   for (let i = 0; i < GW * GH; i++) {
     const v = vision[i] * 255;
-    img.data[4 * i] = v * .45; img.data[4 * i + 1] = v * .85;
+    // 발화가 많을수록 초록이 섞인다. 빛은 파랗고, 반응은 초록이다.
+    const g = Math.min(255, v * .85 + spark * 90);
+    img.data[4 * i] = v * .4; img.data[4 * i + 1] = g;
     img.data[4 * i + 2] = v; img.data[4 * i + 3] = 255;
   }
   eyeCtx.putImageData(img, 0, 0);
@@ -188,14 +191,28 @@ async function flash(side) {
     }
     brain.setDrive(ci, buf, 150);
   }
+  // 계산은 30ms 면 끝나지만 한 번에 돌리면 아무것도 안 보인다.
+  // 볼리를 여덟 토막으로 나눠 그리는 사이 반응이 번지는 것을 보여준다.
   const t0 = performance.now();
-  for (let k = 0; k < 40; k++) brain.step();      // 볼리 한 번
-  const dt = performance.now() - t0;
+  let compute = 0;
+  for (let chunk = 0; chunk < 8; chunk++) {
+    const c0 = performance.now();
+    for (let k = 0; k < 5; k++) brain.step();
+    compute += performance.now() - c0;
+    drawEye(Math.min(1, brain.nSpikes / 900));
+    await new Promise((r) => requestAnimationFrame(r));
+  }
+  const dt = compute;
 
   const l = brain.groupHz(cal.leftCh) / cal.baseL;
   const r = brain.groupHz(cal.rightCh) / cal.baseR;
   const sum = l + r;
-  const d = sum < 0.05 ? 0 : (r - l) / sum;
+  // 좌우 불균형을 합으로 정규화한다. 절대 문턱을 두면 안 된다 —
+  // 이 값은 이미 개체별 기준선으로 나눈 비율이라, 합이 0.04 라도 한쪽만
+  // 울고 있으면 그것은 뚜렷한 판단이다. 실측에서 0.05 문턱을 뒀다가
+  // 멀쩡한 판단(좌 0.04 / 우 0.00)을 0 으로 지워버렸다.
+  const LIVE = 1e-4;
+  const d = sum < LIVE ? 0 : (r - l) / sum;
   const hz = brain.groupHz(cal.active);
 
   $("#mS").style.left = d < 0 ? `${50 + d * 50}%` : "50%";
@@ -206,6 +223,7 @@ async function flash(side) {
   $("#vD").textContent = hz.toFixed(1) + "Hz";
 
   const side_name = side === "L" ? "left" : "right";
+  const dead = sum < LIVE;
   $("#flyOut").innerHTML = cut
     ? `Light on the ${side_name}. Descending neurons still fire (<b>${hz.toFixed(1)}Hz</b>) but the
        channel that carried the difference is gone, so the decision is <b>${$("#vS").textContent}</b>.`
@@ -257,3 +275,13 @@ $("#limits").innerHTML = `
   that result rather than hiding it.<br><br>
   <b>Nothing here leaves your machine.</b> The model and the connectome both run in this
   page. There is no server.`;
+
+/* ── 스크롤 진입 ───────────────────────────────── */
+{
+  const els = document.querySelectorAll("section > .eyebrow, section > h3, section > .body, .duo, .cmp, .fine, .spec > div");
+  els.forEach((e) => e.classList.add("rise"));
+  const io = new IntersectionObserver((rows) => {
+    for (const r of rows) if (r.isIntersecting) { r.target.classList.add("in"); io.unobserve(r.target); }
+  }, { rootMargin: "0px 0px -8% 0px", threshold: 0.05 });
+  els.forEach((e) => io.observe(e));
+}
