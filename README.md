@@ -4,7 +4,7 @@ emoji: ⚖️
 colorFrom: gray
 colorTo: green
 sdk: static
-app_file: docs/index.html
+app_file: index.html
 pinned: false
 license: mit
 ---
