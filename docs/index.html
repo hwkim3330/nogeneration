@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>No Generation — decisions without generating text</title>
+<meta name="description" content="Two systems that decide without generating: a 1.5B-class language model read at its logits, and a real fruit-fly connectome. One forward pass, no tokens, format that cannot break.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>⚖️</text></svg>">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<header>
+  <h1>No Generation</h1>
+  <span class="sub">Deciding without producing a single token.</span>
+  <div class="sp"></div>
+  <span class="meta" id="hw">checking hardware…</span>
+</header>
+
+<div class="page">
+
+  <section class="lede">
+    <p>A language model answering a multiple-choice question normally <b>writes</b> the answer —
+    one token at a time, each pass depending on the last. Hundreds of forward passes to emit a
+    word that was already decided at the first one.</p>
+    <p>It does not have to. The choice is visible in the logits of a <b>single</b> forward pass.
+    Read it there and three things change: it gets faster, the output <i>cannot</i> be malformed,
+    and you can see how close the call was.</p>
+    <p><b>A fruit fly's nervous system already works this way.</b> Light hits the eye, current
+    spreads through real wiring, descending neurons fire more on one side than the other. One
+    pass. No tokens. And you can watch the whole thing happen.</p>
+  </section>
+
+  <div class="grid">
+    <!-- LLM -->
+    <div class="panel">
+      <div class="hd"><h2>Language model</h2><span class="tag" id="llmTag">Qwen2.5-0.5B · in your browser</span></div>
+      <div class="bd">
+        <div class="muted">Runs on your machine. Nothing is sent anywhere.</div>
+        <button class="cta" id="load">Load the model (~400 MB)</button>
+        <div id="loadNote" class="muted"></div>
+
+        <div id="llmUI" hidden>
+          <label class="k">Context</label>
+          <textarea id="ctx" rows="3">A cat sits on a warm windowsill, purring.</textarea>
+          <label class="k">Options (one per line)</label>
+          <textarea id="opts" rows="4">dog
+cat
+bird
+fish</textarea>
+          <div class="row">
+            <button class="plain" id="grab">Read the logits (1 pass)</button>
+            <button class="plain" id="gen">Generate it instead</button>
+          </div>
+          <div id="bars" class="bars"></div>
+          <div id="llmOut" class="out"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fly -->
+    <div class="panel">
+      <div class="hd"><h2>Fruit fly</h2><span class="tag">FlyWire v783 · 138,639 neurons</span></div>
+      <div class="bd">
+        <div class="muted">A real connectome, simulated as a spiking network here in the page.
+          Zero language-model inference.</div>
+        <button class="cta" id="hire">Wake one up</button>
+        <div id="flyNote" class="muted"></div>
+
+        <div id="flyUI" hidden>
+          <div class="stage"><canvas id="eye" width="16" height="12"></canvas></div>
+          <div class="row">
+            <button class="plain" id="lightL">Light on the left</button>
+            <button class="plain" id="lightR">Light on the right</button>
+          </div>
+          <div class="gauge"><span class="k">Decision</span><span class="t"><i id="mS"></i></span><span class="v mono" id="vS">·0</span></div>
+          <div class="gauge"><span class="k">Descending</span><span class="t"><i id="mD" style="left:0"></i></span><span class="v mono" id="vD">0Hz</span></div>
+          <div class="out" id="flyOut"></div>
+          <div class="row">
+            <button class="plain" id="cut">Cut the channel</button>
+            <button class="plain" id="heal">Restore</button>
+          </div>
+          <div class="muted" id="cutNote">Cutting 40 neurons out of 138,639 — 0.03% — takes the
+            decision to zero. Nothing downstream is scripted, so there is nothing to fall back on.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel wide">
+    <div class="hd"><h2>What one forward pass buys</h2></div>
+    <div class="bd">
+      <table class="cmp">
+        <tr><th></th><th>Generating</th><th>Reading the logits</th><th>The fly</th></tr>
+        <tr><td>Forward passes per decision</td><td class="mono">up to 288</td><td class="mono ok">1</td><td class="mono ok">1 volley</td></tr>
+        <tr><td>Can the output be malformed?</td><td>yes</td><td class="ok">structurally impossible</td><td class="ok">structurally impossible</td></tr>
+        <tr><td>Confidence available?</td><td>not directly</td><td class="ok">yes, calibrated</td><td class="ok">yes, firing rates</td></tr>
+        <tr><td>Can you see <i>why</i>?</td><td>no</td><td>partly — the logits</td><td class="ok">the whole path, and you can cut it</td></tr>
+      </table>
+      <div class="note" id="measured"></div>
+    </div>
+  </div>
+
+  <div class="panel wide">
+    <div class="hd"><h2>Honest limits</h2></div>
+    <div class="bd"><div class="note" id="limits"></div></div>
+  </div>
+
+</div>
+
+<footer>
+  Connectome <b>FlyWire v783</b> (CC-BY 4.0) · model <span class="mono">onnx-community/Qwen2.5-0.5B-Instruct</span><br>
+  <a href="https://github.com/hwkim3330/nogeneration">GitHub</a>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

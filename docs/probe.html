@@ -1,0 +1,32 @@
+<meta charset="utf-8"><title>logit probe</title>
+<pre id="o">시작…</pre>
+<script type="module">
+const o=document.getElementById('o'); const log=s=>{o.textContent+="\n"+s; console.log(s);};
+try{
+  const T = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.6');
+  log('transformers.js 적재됨 '+(T.env?.version||''));
+  log('WebGPU: '+(navigator.gpu?'있음':'없음'));
+  const id='onnx-community/Qwen2.5-0.5B-Instruct';
+  const tok = await T.AutoTokenizer.from_pretrained(id);
+  log('토크나이저 OK');
+  const t0=performance.now();
+  const model = await T.AutoModelForCausalLM.from_pretrained(id,{dtype:'q4', device: navigator.gpu?'webgpu':'wasm'});
+  log(`모델 적재 ${((performance.now()-t0)/1000).toFixed(1)}초`);
+  // 로짓 그래빙: 한 번 순전파, 마지막 위치에서 선택지 첫 토큰만 비교
+  const prompt = tok.apply_chat_template([{role:'user',content:
+    'A cat sits on a warm windowsill, purring.\n\nOptions:\nA. dog\nB. cat\nC. bird\n\nAnswer with one letter only.\nAnswer:'}],
+    {tokenize:false, add_generation_prompt:true});
+  const inp = await tok(prompt);
+  const t1=performance.now();
+  const out = await model(inp);
+  const dt=performance.now()-t1;
+  const lg = out.logits;
+  log('logits 모양: '+lg.dims.join('x'));
+  const V=lg.dims[2], last=(lg.dims[1]-1)*V;
+  const ids=['A','B','C'].map(c=>tok.encode(c,{add_special_tokens:false})[0]);
+  const sc=ids.map(i=>lg.data[last+i]);
+  log('A/B/C 로짓: '+sc.map(x=>x.toFixed(2)).join(' / '));
+  log('고른 답: '+['A','B','C'][sc.indexOf(Math.max(...sc))]+`  (순전파 1회, ${dt.toFixed(0)}ms)`);
+  log('RESULT_OK');
+}catch(e){ log('실패: '+e.message); log('RESULT_FAIL'); }
+</script>
